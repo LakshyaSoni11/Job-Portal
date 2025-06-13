@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+
+.custom-description {
+  @apply text-gray-700 leading-relaxed space-y-4 text-[16px];
+}
+
+.custom-description p {
+  @apply mb-4;
+}
+
+.custom-description h2 {
+  @apply text-xl font-semibold text-blue-700 mt-6 mb-2;
+}
+
+.custom-description ol {
+  @apply list-decimal list-inside ml-4 space-y-2;
+}
+
+.custom-description li {
+  @apply pl-2;
+}
+
+.custom-description strong {
+  @apply font-bold text-gray-800;
+}
