@@ -5,7 +5,7 @@ import 'dotenv/config'
 import connectDB from './config/db.js'
 import * as Sentry from "@sentry/node";
 import { clerkWebooks } from './controller/webhook.js'
-import bodyParser from 'body-parser';
+// import bodyParser from 'body-parser';
 
 const app = express()
 //connecting to database
@@ -14,7 +14,7 @@ await connectDB()
 app.use(cors())
 
 
-app.post('/webhooks', bodyParser.raw({ type: 'application/json' }), clerkWebooks);
+app.post('/webhooks', clerkWebooks);
 app.use(express.json()); // Keep this after
 
 app.get('/',(req,res)=>{
