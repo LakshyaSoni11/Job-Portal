@@ -1,60 +1,56 @@
-//webhook is way to send data from one application to another
 import { Webhook } from "svix";
 import User from "../models/User.js";
 
+export const clerkWebooks = async (req , res) => {
+  try {
+    //this is clerk svix instance with webhook secret
+    const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
 
-// api function to manage clerk user with database
-export const clerkWebooks = async (req , res) =>{
-    try {
-        //create svix instance with clerk secret key
-        const whook = new Webhook (process.env.CLERK_WEBHOOK_SECRET)
+    const evt = whook.verify(req.body, {
+      "svix-id": req.headers["svix-id"],
+      "svix-timestamp": req.headers["svix-timestamp"],
+      "svix-signature": req.headers["svix-signature"]
+    });
+//creating data from req.body
+    const { data, type } = req.body
+    
+    switch (type) {
+      case 'user.created': {
+        const userData = {
+          _id: data.id,
+          email: data.email_addresses[0].email_address,
+          name: data.first_name + " " + data.last_name,
+          image: data.image_url,
+          resume: ''
+        };
+        await User.create(userData);
+        console.log("User created:", userData);
+        return res.status(201).json({ success: true });
+      }
 
-        //VERIFY HEADERS
-        await whook.verify(JSON.stringify(req.body),{
-            "svix-id" : req.headers["svix-id"],
-            "svix-timestamp" : req.headers["svix.timestamp"],
-            "svix-signature" : req.headers["svix.signature"]
-        })
+      case 'user.updated': {
+        const userData = {
+          email: data.email_addresses[0].email_address,
+          name: data.first_name + " " + data.last_name,
+          image: data.image_url
+        };
+        await User.findByIdAndUpdate(data.id, userData);
+        console.log("User updated:", data.id);
+        return res.json({ success: true });
+      }
 
-        //getting data from req.bpdy
-        const {data,type} = req.body
-        
-        //switch case for diff scnarios crud
-        switch (type) {
-            case 'user.created': {
-                const userData = {
-                    _id: data.id,
-                    email: data.email_addresses[0].email_address,
-                    name: data.first_name + " " + data.last_name,
-                    image:data.image_url,
-                    resume: ''
-                }
-                await User.create(userData)
-                res.json()({})
-                break;
-            }
-            case 'user.updated' : {
-                const userData = {
-                    email: data.email_addresses[0].email_address,
-                    name: data.first_name + " " + data.last_name,
-                    image:data.image_url
-                }
-                await User.findByIdAndUpdate(data.id , userData)
-                res.json()({})
-                break;
-            }
-            case 'user.deleted' :{
-                await User.findByIdAndDelete(data.id)
-                res.json()({})
-                break;
+      case 'user.deleted': {
+        await User.findByIdAndDelete(data.id);
+        console.log("User deleted:", data.id);
+        return res.json({ success: true });
+      }
 
-            }     
-                default:
-                break;
-        }
-    } catch (error) {
-        console.log(error.message)
-        res.json({success: false,'message':'webhook error present' })
-        
+      default:
+        return res.status(400).json({ success: false, message: "Unknown event type" });
     }
+
+  } catch (error) {
+    console.error("Webhook error:", error.message);
+    return res.status(400).json({ success: false, message: "Webhook error present" });
+  }
 }
