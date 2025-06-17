@@ -1,32 +1,40 @@
-import './config/instrument.js'
-import express from 'express'
-import cors from 'cors'
-import 'dotenv/config'
-import connectDB from './config/db.js'
+import './config/instrument.js';
+import express from 'express';
+import cors from 'cors';
+import 'dotenv/config';
+import connectDB from './config/db.js';
 import * as Sentry from "@sentry/node";
-import { clerkWebooks } from './controller/webhook.js'
-// import bodyParser from 'body-parser';
+import { clerkWebhooks } from './controller/webhook.js';
 
-const app = express()
-//connecting to database
-await connectDB()
+const app = express();
 
-app.use(cors())
+// Connect to database
+await connectDB();
 
+// CORS configuration
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+}));
 
-app.post('/webhooks', clerkWebooks);
-app.use(express.json()); // Keep this after
+// 👉 CRITICAL: Webhook route MUST come before express.json() middleware
+app.use('/webhooks', express.raw({ type: 'application/json' }));
+app.post('/webhooks', clerkWebhooks);
 
-app.get('/',(req,res)=>{
-    res.send("app is working properly")
-})
-app.get('/debug-sentry' , function santryHandler(req,res){
-    throw new Error("first sentry error");
-    
-})
+// Use JSON middleware for other routes (after webhook routes)
+app.use(express.json());
 
-const PORT = process.env.PORT || 5000
+app.get('/', (req, res) => {
+  res.send("App is working properly");
+});
+
+app.get('/debug-sentry', function santryHandler(req, res) {
+  throw new Error("First Sentry error");
+});
+
+const PORT = process.env.PORT || 5000;
 Sentry.setupExpressErrorHandler(app);
-app.listen(PORT,()=>{
-    console.log('app is running on port ',PORT)
-})
+
+app.listen(PORT, () => {
+  console.log('App is running on port', PORT);
+});
