@@ -1,6 +1,6 @@
 import { Webhook } from "svix";
 import User from "../models/User.js";
-
+//api controller function to manage clerk user with db
 export const clerkWebhooks = async (req, res) => {
   try {
     // Validate environment variable
@@ -43,7 +43,8 @@ export const clerkWebhooks = async (req, res) => {
       "svix-timestamp": svix_timestamp,
       "svix-signature": svix_signature
     });
-
+    //getting data from request body
+    //type will be event type like user created user delete and data created will contain the payload data from the user
     const { data, type } = evt;
 
     console.log(`Webhook received: ${type}`);

@@ -1,25 +1,46 @@
-import React from 'react'
+import React, { useContext, useEffect } from 'react'
 import { assets } from '../assets/assets'
 import { Outlet, useNavigate } from 'react-router-dom'
 import { NavLink } from 'react-router-dom'
+import { AppContext } from '../context/AppContext'
 const Dashboard = () => {
   const navigate =useNavigate();
+  const {companyData, setCompanyData, setCompanyToken} = useContext(AppContext)
+
+
+//logout function
+  const logout = () =>{
+    setCompanyData(null)
+    setCompanyToken(null)
+    localStorage.removeItem('companyToken')
+    navigate('/')
+  }
+
+
+useEffect(() =>{
+  if(companyData){
+    navigate('/dashboard/manage-jobs')
+  }
+},[companyData])
+
   return (
     <div className='min-h-screen'>
       <div className='shadow py-4'>
         <div className='flex items-center justify-between px-7'>
           <img onClick={e=> navigate('/')} className='cursor-pointer min-w-32' src={assets.logo} alt="logo" />
-          <div className='flex items-center gap-3'>
-            <p>Welcome ,LakshyaSoni</p>
+         {companyData &&(
+           <div className='flex items-center gap-3'>
+            <p>Welcome ,{companyData.name}</p>
             <div className='relative group'>
-              <img className='rounded-full w-9 ' src={assets.company_icon} alt="" />
+              <img className='rounded-full w-9 ' src={companyData.image} alt="companyLogo" />
               <div className='absolute hidden group-hover:block top-0 right-0 z-10 text-black rounded pt-15'>
                 <ul className=' shadow p-3 rounded-md m-0 border bg-white'>
-                  <li className='cursor-pointer text-sm font-black pr-10 '>Logout</li>
+                  <li onClick={logout} className='cursor-pointer text-sm font-black pr-10 '>Logout</li>
                 </ul>
               </div>
             </div>
           </div>
+         )}
         </div>
       </div>
       {/* Side bar and right bar */}
@@ -42,7 +63,7 @@ const Dashboard = () => {
             </NavLink>
           </ul>
         </div>
-      <div>
+      <div className='flex-1 h-full p-2 sm:p-5'>
         <Outlet />
       </div>
       </div>
