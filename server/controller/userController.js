@@ -4,7 +4,9 @@ import User from "../models/User.js";
 import { v2 as cloudinary } from "cloudinary";
 import multer from "multer";
 
-const upload = multer({ dest: "uploads/" });
+// ✅ Use memoryStorage instead of disk
+const storage = multer.memoryStorage();
+export const upload = multer({ storage });
 
 // ✅ get user data
 export const getUserData = async (req, res) => {
@@ -83,7 +85,10 @@ export const updateUserResume = async (req, res) => {
 
     if (resumeFile) {
       try {
-        const resumeUpload = await cloudinary.uploader.upload(resumeFile.path, {
+        // ✅ Convert buffer to base64 and upload directly
+        const uploadStr = `data:${resumeFile.mimetype};base64,${resumeFile.buffer.toString("base64")}`;
+
+        const resumeUpload = await cloudinary.uploader.upload(uploadStr, {
           resource_type: "auto", // handles pdf/docx too
         });
 
