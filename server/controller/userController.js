@@ -10,7 +10,7 @@ export const upload = multer({ storage });
 
 // ✅ get user data
 export const getUserData = async (req, res) => {
-  const userId = req.auth.userId;
+const { userId } = req.auth(); 
 
   try {
     const user = await User.findById(userId);
@@ -72,42 +72,48 @@ export const getUserApplications = async (req, res) => {
   }
 };
 
-// ✅ update user resume
+
 export const updateUserResume = async (req, res) => {
   try {
-    const userId = req.auth.userId;
+    // ✅ Clerk now provides req.auth() as a function (not req.auth.userId)
+    const { userId } = req.auth();
+
     const resumeFile = req.file;
+    if (!resumeFile) {
+      return res.status(400).json({ success: false, message: "No resume file uploaded" });
+    }
 
     const userData = await User.findById(userId);
     if (!userData) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    if (resumeFile) {
-      try {
-        // ✅ Convert buffer to base64 and upload directly
-        const uploadStr = `data:${resumeFile.mimetype};base64,${resumeFile.buffer.toString("base64")}`;
+    try {
+      // ✅ Convert buffer to Base64 and upload directly
+      const uploadStr = `data:${resumeFile.mimetype};base64,${resumeFile.buffer.toString("base64")}`;
 
-        const resumeUpload = await cloudinary.uploader.upload(uploadStr, {
-          resource_type: "auto", // handles pdf/docx too
-        });
+      const resumeUpload = await cloudinary.uploader.upload(uploadStr, {
+        resource_type: "auto", // pdf/docx supported
+        folder: "resumes", // (optional) keep Cloudinary organized
+      });
 
-        userData.resume = resumeUpload.secure_url;
-        console.log("Resume uploaded:", resumeUpload.secure_url);
-      } catch (e) {
-        console.error("Cloudinary upload error:", e);
-        return res.status(500).json({ success: false, message: "Resume upload failed" });
-      }
+      userData.resume = resumeUpload.secure_url;
+      await userData.save();
+
+      console.log("Resume uploaded:", resumeUpload.secure_url);
+
+      return res.json({
+        success: true,
+        message: "Resume updated successfully",
+        resume: userData.resume,
+      });
+    } catch (e) {
+      console.error("Cloudinary upload error:", e);
+      return res.status(500).json({ success: false, message: "Resume upload failed" });
     }
-
-    await userData.save();
-    return res.json({
-      success: true,
-      message: "Resume updated successfully",
-      resume: userData.resume,
-    });
   } catch (error) {
     console.error("Update resume error:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
